@@ -1,0 +1,179 @@
+# Generic
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*.seed
+*.pid
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+.local
+*.local
+*.key
+*.pem
+*.p12
+
+# Node
+node_modules/
+jspm_packages/
+dist/
+build/
+tmp/
+.cache/
+.nyc_output/
+coverage/
+.eslintcache
+pnpm-lock.yaml
+
+# Package managers / lockfiles
+# (Keep lockfiles if you prefer reproducible builds; uncomment to ignore)
+# package-lock.json
+# yarn.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+venv/
+env/
+.venv/
+pip-wheel-metadata/
+build/
+dist/
+*.egg-info/
+.eggs/
+.python-version
+
+# Java / Kotlin / Scala / Gradle / Maven
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+out/
+.gradle/
+.gradle-cache/
+.mvn/
+.settings/
+.classpath
+.project
+*.iml
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Go
+bin/
+pkg/
+*.exe
+*.exe~
+*.test
+
+# C / C++ / Obj-C
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+out/
+
+# .NET / Visual Studio
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+out/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# Android / iOS
+*.apk
+*.ap_
+*.aab
+*.ipa
+.gradle/
+local.properties
+*.keystore
+build/
+
+# Xcode
+*.xcworkspace
+*.xcuserdata
+*.xcuserstate
+DerivedData/
+build/
+*.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+# Electron / Native build artifacts
+dist-electron/
+release/
+app/build/
+
+# Docker
+docker-compose.override.yml
+Dockerfile.*
+*.log
+docker-compose*.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# IDE & Editor backups
+*~ 
+*.bak
+*.orig
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Media / assets build outputs
+*.psd
+*.ai
+*.tmp
+/cache/
+thumbs.db
+
+# Misc
+coverage/
+coverage-report/
+.vagrant/
+*.cache
+.DS_Store
+Thumbs.db
+logs/
+pids/
+.sass-cache/
+
+# Keep an example file for envs if present
+!.env.example

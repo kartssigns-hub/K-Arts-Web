@@ -30,9 +30,9 @@ const Contact = () => {
   };
 
   const contactInfo = [
-    { icon: Phone, label: 'Phone', value: '+91 98765 43210', href: 'tel:+919876543210' },
-    { icon: Mail, label: 'Email', value: 'info@kartz.com', href: 'mailto:info@kartz.com' },
-    { icon: MapPin, label: 'Location', value: 'Mumbai, Maharashtra, India', href: '#' },
+    { icon: Phone, label: 'Phone', value: '+91 9822110512', href: 'tel:+919822110512' },
+    { icon: Mail, label: 'Email', value: 'k.artz.signs.com', href: 'mailto:k.artz.signs.com' },
+    { icon: MapPin, label: 'Location', value: 'Pune, Maharashtra, India', href: '#' },
   ];
 
   return (
@@ -45,7 +45,7 @@ const Contact = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Get in <span className="text-gradient">Touch</span>
+            Get in <span className="text-green-200">Touch</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Ready to illuminate your brand? Let's create something amazing together
@@ -88,7 +88,7 @@ const Contact = () => {
             ))}
 
             {/* Map Embed */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ duration: 0.6, delay: 0.3 }}
@@ -102,7 +102,7 @@ const Contact = () => {
                 allowFullScreen
                 loading="lazy"
               />
-            </motion.div>
+            </motion.div> */}
           </motion.div>
 
           {/* Contact Form */}

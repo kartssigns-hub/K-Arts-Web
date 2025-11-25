@@ -15,7 +15,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold text-gradient mb-4">K'artz</h3>
+            {/* <h3 className="text-2xl font-bold text-gradient mb-4">K'artz</h3> */}
+             <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="text-3xl font-bold text-foreground tracking-wide"
+          >
+            <span style={{ textShadow: '0 0 10px rgba(0, 123, 255, 0.8)' }}>K'</span>
+            <span style={{ textShadow: '0 0 10px rgba(255, 165, 0, 0.8)' }}>artz</span>
+          </motion.div>
             <p className="text-muted-foreground">
               Crafting excellence in signage since 1997
             </p>
@@ -47,9 +54,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li>+91 98765 43210</li>
-              <li>info@kartz.com</li>
-              <li>Mumbai, Maharashtra</li>
+              <li>+91 9822110512</li>
+              <li>k.artz.signs@gmail.com</li>
+              <li>Pune, Maharashtra</li>
             </ul>
           </div>
         </div>

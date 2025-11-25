@@ -1,18 +1,19 @@
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-import Features from '@/components/Features';
+// import Features from '@/components/About';
 import Works from '@/components/Works';
 import Services from '@/components/Services';
 import Testimonials from '@/components/Testimonials';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import About from '@/components/About';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <Hero />
-      <Features />
+      <About />
       <Works />
       <Services />
       <Testimonials />
