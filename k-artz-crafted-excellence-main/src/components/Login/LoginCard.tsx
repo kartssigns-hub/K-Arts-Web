@@ -24,7 +24,7 @@ export default function LoginCard() {
     try {
       setLoading(true);
       await loginWithGoogle();
-      navigate("/dashboard");
+      navigate("/");
     } catch (e: any) {
       setError("Failed to sign in with Google.");
     } finally {
