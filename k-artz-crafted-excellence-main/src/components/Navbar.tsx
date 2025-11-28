@@ -86,7 +86,7 @@ const Navbar = () => {
                 variant="ghost"
                 size="icon"
                 className="text-foreground hover:text-accent hover:bg-accent/10"
-                onClick={()=>navigate('/chat')}
+                // onClick={()=>navigate('/chat')}
               >
                 <MessageCircle className="h-5 w-5" />
               </Button>
