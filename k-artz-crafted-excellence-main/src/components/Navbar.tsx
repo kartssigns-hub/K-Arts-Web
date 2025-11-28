@@ -121,7 +121,7 @@ const Navbar = () => {
                   className="px-6 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  Google Login
+                   Login
                 </Link>
               )}
             </motion.div>
