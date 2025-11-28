@@ -5,10 +5,12 @@ import { motion, useScroll } from "framer-motion";
 import { MessageCircle, LogIn } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "../hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Link, Router,useNavigate } from "react-router-dom";
+
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate=useNavigate();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
@@ -84,6 +86,7 @@ const Navbar = () => {
                 variant="ghost"
                 size="icon"
                 className="text-foreground hover:text-accent hover:bg-accent/10"
+                onClick={()=>navigate('/chat')}
               >
                 <MessageCircle className="h-5 w-5" />
               </Button>
