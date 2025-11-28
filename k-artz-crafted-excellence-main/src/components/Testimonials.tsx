@@ -11,7 +11,7 @@ const testimonials = [
     role: 'CEO, TechCorp Solutions',
     content: 'K\'artz delivered exceptional quality LED boards for our office. The attention to detail and professional service exceeded our expectations!',
     rating: 5,
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
+    // image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ const testimonials = [
     role: 'Owner, Boutique Café',
     content: 'The custom name plates and signage transformed our café\'s aesthetic. Their design team understood our vision perfectly.',
     rating: 5,
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
+    // image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
   },
   {
     id: 3,
@@ -27,7 +27,7 @@ const testimonials = [
     role: 'Marketing Director, RetailHub',
     content: 'Outstanding craftsmanship and quick turnaround time. K\'artz has been our go-to partner for all signage needs for 5 years now.',
     rating: 5,
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    // image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
   },
 ];
 
@@ -68,7 +68,7 @@ const Testimonials = () => {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <motion.img
                   whileHover={{ scale: 1.1 }}
-                  src={testimonials[currentIndex].image}
+                  // src={testimonials[currentIndex].image}
                   alt={testimonials[currentIndex].name}
                   className="w-24 h-24 rounded-full object-cover border-4 border-primary glow-primary"
                 />
