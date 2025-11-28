@@ -31,7 +31,7 @@ const Contact = () => {
 
   const contactInfo = [
     { icon: Phone, label: 'Phone', value: '+91 9822110512', href: 'tel:+919822110512' },
-    { icon: Mail, label: 'Email', value: 'k.artz.signs.com', href: 'mailto:k.artz.signs.com' },
+    { icon: Mail, label: 'Email', value: 'k.artz.signs@gmail.com', href: 'mailto:k.artz.signs.com' },
     { icon: MapPin, label: 'Location', value: 'Pune, Maharashtra, India', href: '#' },
   ];
 
