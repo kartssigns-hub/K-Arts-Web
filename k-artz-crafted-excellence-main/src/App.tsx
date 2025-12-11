@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import ChatPage from "./pages/ChatPage";
+import ContactPage from "./pages/ContactPage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             
             {/* 3. Add Login and Protected Dashboard Routes */}
             <Route path="/login" element={<Login />} />
+             <Route path="/contact" element={<ContactPage />} />
             <Route 
               path="/dashboard" 
               element={
@@ -42,6 +44,7 @@ const App = () => (
       <ProtectedRoute>
         <ChatPage />
       </ProtectedRoute>
+
   } />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
