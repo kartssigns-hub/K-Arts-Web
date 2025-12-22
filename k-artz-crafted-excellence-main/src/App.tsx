@@ -40,7 +40,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/no" element={
+            <Route path="/chat" element={
       <ProtectedRoute>
         <ChatPage />
       </ProtectedRoute>

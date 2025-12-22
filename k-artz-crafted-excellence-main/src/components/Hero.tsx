@@ -106,22 +106,22 @@ const Hero = () => {
           </motion.div>
 
           <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
-            Your Name.  <span>       Your Story. </span>
+            Illuminate Your Brand  <span>      Name </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">
-              Our Craft.
+              With Our Signs
             </span>
           </h1>
 
           <div className="relative pl-6 border-l-2 border-amber-500/50">
             <p className="text-lg text-slate-400 font-light italic leading-relaxed">
-              "From modern acrylic plates to bespoke signage,
+              "From modern acrylic name plates to bespoke signage,
 we build designs that make people remember you"
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
             <Button className="h-14 px-8 text-base bg-white text-black hover:bg-slate-200 rounded-full transition-transform hover:scale-105">
-              Start Your Project
+              Let's Get Started
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </div>

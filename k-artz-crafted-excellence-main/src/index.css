@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* body {
+  @apply font-montserrat;
+} */
+
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -77,6 +82,7 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     overflow-x: hidden;
+    @apply font-montserrat;
   }
 
   html {
