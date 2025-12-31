@@ -39,10 +39,10 @@ const Navbar = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           
-          {/* --- MODIFIED LOGO SECTION --- */}
+        
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="flex flex-col cursor-pointer" // Used flex-col to stack items
+            className="flex flex-col cursor-pointer" 
           >
             {/* Main Title */}
             <div className="text-3xl font-bold text-foreground tracking-wide leading-none">
@@ -86,7 +86,7 @@ const Navbar = () => {
                 variant="ghost"
                 size="icon"
                 className="text-foreground hover:text-accent hover:bg-accent/10"
-                // onClick={()=>navigate('/chat')}
+                onClick={()=>navigate('/chat')}
               >
                 <MessageCircle className="h-5 w-5" />
               </Button>
