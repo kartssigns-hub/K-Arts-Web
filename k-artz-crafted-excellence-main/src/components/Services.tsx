@@ -1,155 +1,128 @@
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Sparkles, Lightbulb, Zap, PenTool } from 'lucide-react';
 
 const services = [
   {
-    icon: PenTool,
+    id: '01',
     title: 'Signature Name Plates',
-    description: 'Acrylic, brass, and steel name plates crafted to reflect your identity with unmatched clarity and detail.',
-    features: ['Deep Engraving', 'Floating Acrylic Designs', 'Premium Finishes'],
+    description: 'Acrylic, brass, and steel name plates crafted to reflect your identity with unmatched clarity.',
+    features: ['Deep Engraving', 'Floating Designs', 'Premium Finishes'],
+    accent: 'from-blue-500 to-cyan-400',
   },
   {
-    icon: Lightbulb,
-    title: 'Illuminated LED Sign Boards',
-    description: 'Modern LED signage that makes your name or brand stand out—day or night.',
+    id: '02',
+    title: 'Illuminated LED Signage',
+    description: 'Modern LED signage that makes your brand stand out day or night with energy-efficient glows.',
     features: ['Soft Glow LEDs', 'Weather-Resistant', 'Energy Efficient'],
+    accent: 'from-yellow-400 to-orange-500',
   },
   {
-    icon: Zap,
-    title: 'Brand & Business Signage',
+    id: '03',
+    title: 'Commercial Branding',
     description: 'High-impact signage crafted for offices, shops, and commercial spaces that demand attention.',
-    features: ['Indoor & Outdoor Builds', 'Illuminated Options', 'Custom Dimensions'],
+    features: ['Indoor & Outdoor', '3D Lettering', 'Custom Dimensions'],
+    accent: 'from-purple-500 to-pink-500',
   },
   {
-    icon: Sparkles,
-    title: 'Design & Concept Consultation',
-    description: 'Personalized guidance to help you choose the perfect design, material, and finish for your unique style.',
-    features: ['Free Visual Mockups', '3D Previews', 'Expert Recommendations'],
+    id: '04',
+    title: 'Design Consultation',
+    description: 'Personalized guidance to help you choose the perfect design, material, and finish.',
+    features: ['Visual Mockups', '3D Previews', 'Expert Guidance'],
+    accent: 'from-emerald-400 to-teal-500',
   },
 ];
 
+const ServiceCard = ({ service }: { service: typeof services[0] }) => {
+  return (
+    <div className="relative w-[400px] h-[420px] mx-4 flex-shrink-0 group">
+      <div className="h-full bg-background/50 backdrop-blur-sm border border-white/10 dark:border-white/5 rounded-3xl p-8 flex flex-col relative overflow-hidden transition-all duration-500 hover:border-white/20">
+        
+        {/* Background Gradient Blob (Visible on Hover) */}
+        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${service.accent} opacity-0 group-hover:opacity-10 blur-[80px] transition-opacity duration-700 rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2`} />
 
-const ServiceCard = ({ service }: { service: typeof services[0] }) => (
-  <motion.div
-    whileHover={{
-      scale: 1.05,
-      // rotateZ: 2,
-    }}
-    className="glass p-8 rounded-2xl group cursor-pointer relative overflow-hidden flex-shrink-0 w-[350px] md:w-[400px] mx-4"
-  >
-    {/* Animated background gradient */}
-    <motion.div
-      className="absolute inset-0  from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-      initial={false}
-    />
+        {/* Top Section: Stylized Number */}
+        <div className="mb-8 relative">
+           <span className="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-foreground/10 to-transparent select-none font-mono tracking-tighter">
+            {service.id}
+          </span>
+          <div className={`absolute bottom-2 left-1 w-12 h-1 bg-gradient-to-r ${service.accent} rounded-full`} />
+        </div>
 
-    <div className="relative z-10">
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.9 }}
-        className="w-16 h-16 mb-6 bg-yellow-500 from-primary to-accent rounded-2xl flex items-center justify-center glow-primary"
-      >
-        <service.icon className="h-8 w-8 text-primary-foreground" />
-      </motion.div>
+        {/* Content */}
+        <div className="relative z-10">
+          <h3 className="text-2xl font-bold mb-4 tracking-tight group-hover:text-primary transition-colors duration-300">
+            {service.title}
+          </h3>
+          <p className="text-muted-foreground leading-relaxed mb-6">
+            {service.description}
+          </p>
 
-      <h3 className="text-2xl font-bold mb-4 group-hover:text-gradient transition-all">
-        {service.title}
-      </h3>
+          {/* Features */}
+          <ul className="space-y-2">
+            {service.features.map((feature, i) => (
+              <li key={i} className="flex items-center text-sm text-muted-foreground/80">
+                <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${service.accent} mr-3`} />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <p className="text-muted-foreground mb-6 text-sm">
-        {service.description}
-      </p>
-
-      <ul className="space-y-2">
-        {service.features.map((feature) => (
-          <li key={feature} className="flex items-center text-sm">
-            <span className="w-2 h-2 bg-accent rounded-full mr-3" />
-            {feature}
-          </li>
-        ))}
-      </ul>
+      </div>
     </div>
-  </motion.div>
-);
+  );
+};
 
 const Services = () => {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
   return (
-    <section id="services" className="py-24 relative overflow-hidden bg-background">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-background to-background/50" />
+    <section id="services" className="py-24 bg-background relative overflow-hidden">
+      {/* Ambient Background */}
+      <div className="absolute inset-0 bg-grid-white/[0.02] -z-10" />
+      <div className="absolute left-0 top-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[128px] -z-10" />
+
+      <div ref={ref} className="container mx-auto px-6 mb-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="text-primary font-semibold tracking-wider uppercase text-sm">Our Expertise</span>
+          <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-6">
+            Services Designed for <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">
+              Impact & Durability
+            </span>
+          </h2>
+        </motion.div>
       </div>
 
-      <div ref={ref} className="relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="text-center mb-16 container mx-auto px-6"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Our <span className="text-blue-300">Services</span>
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Comprehensive signage solutions tailored to your needs
-          </p>
-        </motion.div>
+      {/* Infinite Scroll Container */}
+      <div className="relative w-full overflow-hidden py-4">
+        {/* Side Fades for smooth entry/exit */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 md:w-40 z-20 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 md:w-40 z-20 bg-gradient-to-l from-background to-transparent pointer-events-none" />
 
-        {/* Marquee Container */}
-        <div className="flex flex-col gap-8 overflow-hidden mask-gradient-horizontal">
-          
-          {/* Row 1: Left to Right (>>>>>) */}
-          {/* We animate from -50% to 0% to create the illusion of moving right */}
-          <div className="flex overflow-hidden">
-            <motion.div
-              className="flex"
-              initial={{ x: "-50%" }}
-              animate={{ x: "0%" }}
-              transition={{
-                repeat: Infinity,
-                ease: "linear",
-                duration: 90, // Adjust speed here
-              }}
-            >
-              {/* Render list twice to create seamless loop */}
-              {[...services, ...services, ...services].map((service, index) => (
-                <ServiceCard key={`row1-${index}`} service={service} />
-              ))}
-            </motion.div>
-          </div>
-
-          {/* Row 2: Right to Left (<<<<<) */}
-          {/* We animate from 0% to -50% to create the illusion of moving left */}
-          <div className="flex overflow-hidden">
-            <motion.div
-              className="flex"
-              initial={{ x: "0%" }}
-              animate={{ x: "-50%" }}
-              transition={{
-                repeat: Infinity,
-                ease: "linear",
-                duration: 90, // Adjust speed here
-              }}
-            >
-               {/* Render list twice to create seamless loop */}
-               {[...services, ...services, ...services].map((service, index) => (
-                <ServiceCard key={`row2-${index}`} service={service} />
-              ))}
-            </motion.div>
-          </div>
-
+        <div className="flex">
+          <motion.div
+            className="flex"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+              duration: 40, // Adjust speed: Higher = Slower
+            }}
+          >
+            {/* We duplicate the array twice to ensure a seamless loop without gaps */}
+            {[...services, ...services].map((service, index) => (
+              <ServiceCard key={`${service.id}-${index}`} service={service} />
+            ))}
+          </motion.div>
         </div>
       </div>
-      
-      {/* Optional: Add gradient masks to sides to fade content out */}
-      <style >{`
-        .mask-gradient-horizontal {
-          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-      `}</style>
     </section>
   );
 };
