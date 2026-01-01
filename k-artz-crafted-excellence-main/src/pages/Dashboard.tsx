@@ -1,9 +1,34 @@
 import React from "react";
 import { useAuth } from "../hooks/useAuth";
 import Navbar from "../components/Navbar"; // Assuming you have this
+import { io } from "socket.io-client";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    
+    // Connect Socket
+    const socket = io("http://localhost:5000");
+
+    // Emit event WITH token
+    socket.emit('admin_connect', token);
+
+    // Handle connection errors
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to socket server');
+    });
+
+    return () => {
+  socket.disconnect();
+};
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200">
