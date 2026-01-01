@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { io } from 'socket.io-client';
 import { format } from 'date-fns';
+import { Route,useNavigate } from 'react-router-dom';
 
 // --- CONFIG ---
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -47,7 +48,7 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  
+  const navigate=useNavigate();
   const socket = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,32 +65,133 @@ const safeFormatTime = (dateString: string | undefined) => {
   }
 };
 
-  // --- INITIALIZATION ---
-  useEffect(() => {
-    // 1. Connect to Socket
-    socket.current = io(SOCKET_URL);
+// useEffect(() => {
+//     // 1. Get the token we saved during Login
+//     const token = localStorage.getItem('adminToken');
+
+//     // 2. Connect to the backend
+//     // (Make sure this URL matches your backend port, usually 5000)
+//     const newSocket = io("http://localhost:5000"); 
+
+//     // 3. ⭐ CRITICAL STEP: Send the token immediately
+//     if (token) {
+//         console.log("📤 Sending Admin Token to backend...");
+//         newSocket.emit('admin_connect', token);
+//     } else {
+//         console.error("❌ No Admin Token found! Redirecting to login...");
+//         // Optional: window.location.href = '/admin/login';
+//     }
+
+//     // 4. Listen for connection success
+//     newSocket.on('connect', () => {
+//         console.log("✅ Socket connected:", newSocket.id);
+//     });
+
+//     // 5. Store socket in state (if you haven't already)
+//     // setSocket(newSocket); 
+
+//     // 6. Cleanup on unmount
+//     return () => {
+//       newSocket.disconnect();
+//     };
+//   }, []);
+
+//   // --- INITIALIZATION ---
+//   useEffect(() => {
+//     // 1. Connect to Socket
+//     socket.current = io(SOCKET_URL);
     
+//     socket.current.on('connect', () => {
+//       console.log("✅ Admin Connected to Socket");
+//       setIsConnected(true);
+//       socket.current.emit('admin_connect'); // Join admin room
+//     });
+
+//     // 2. Real-time Incoming Message Handler
+//     socket.current.on('admin_receive_message', (data: any) => {
+//         // Play notification sound here if needed
+//         fetchChats(); // Refresh chat list to show unread/newest
+//         if (selectedChat && selectedChat.userId === data.userId) {
+//              setMessages(prev => [...prev, data]);
+//         }
+//     });
+
+//     // 3. Initial Data Fetch
+//     fetchStats();
+//     fetchChats();
+
+//     return () => { socket.current.disconnect(); };
+//   }, [selectedChat]);
+
+// --- INITIALIZATION & SOCKET CONNECTION ---
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+
+    // 1. Redirect if no token exists initially
+    if (!token) {
+        console.error("❌ No Admin Token found!");
+        navigate('/admin/login');
+        return;
+    }
+
+    // 2. Initialize Socket (Single Instance)
+    // socket.current = io("http://localhost:5000"); // Use this if hardcoded
+    socket.current = io(SOCKET_URL); // Better to use your config constant
+
+    // 3. Setup Event Listeners
     socket.current.on('connect', () => {
-      console.log("✅ Admin Connected to Socket");
+      console.log("✅ Admin Socket Connected:", socket.current.id);
       setIsConnected(true);
-      socket.current.emit('admin_connect'); // Join admin room
+      
+      // ⚡ AUTHENTICATE IMMEDIATELY
+      console.log("📤 Sending Admin Token...");
+      socket.current.emit('admin_connect', token);
     });
 
-    // 2. Real-time Incoming Message Handler
+    // 4. 🔒 HANDLE AUTH ERRORS (Password Changed / Invalid Token)
+    socket.current.on('error_message', (msg: string) => {
+        console.error("⛔ Auth Error:", msg);
+        
+        // A. Alert the user
+        alert(msg); // "Session expired. Please login again."
+        
+        // B. Clear local storage
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminEmail');
+
+        // C. Force Redirect to Login
+        navigate('/admin/login');
+    });
+
+    // 5. Real-time Incoming Message Handler
     socket.current.on('admin_receive_message', (data: any) => {
-        // Play notification sound here if needed
-        fetchChats(); // Refresh chat list to show unread/newest
+        fetchChats(); // Refresh list
         if (selectedChat && selectedChat.userId === data.userId) {
              setMessages(prev => [...prev, data]);
         }
     });
 
-    // 3. Initial Data Fetch
+    // 6. Initial API Data Fetch
     fetchStats();
     fetchChats();
 
-    return () => { socket.current.disconnect(); };
-  }, [selectedChat]);
+    // 7. Cleanup
+    return () => {
+      if (socket.current) socket.current.disconnect();
+    };
+  }, [selectedChat, navigate]); // Added navigate dependency
+
+  const handleLogout = () => {
+    // 1. Disconnect Socket
+    if (socket.current) socket.current.disconnect();
+
+    // 2. Clear Storage
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminEmail');
+
+    // 3. Redirect
+    navigate('/admin/login');
+  };
 
 
   // --- API CALLS ---
@@ -250,8 +352,8 @@ const safeFormatTime = (dateString: string | undefined) => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 System Operational
              </div>
-             <button className="flex items-center gap-2 text-gray-400 hover:text-white w-full px-4 py-2 hover:bg-white/5 rounded-lg transition-colors">
-                <LogOut size={18} /> Logout
+             <button onClick={handleLogout} className="flex items-center gap-2 text-gray-400 hover:text-white w-full px-4 py-2 hover:bg-white/5 rounded-lg transition-colors">
+                <LogOut   size={18} /> Logout
              </button>
         </div>
       </aside>
