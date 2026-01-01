@@ -15,13 +15,15 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import ChatPage from "./pages/ChatPage";
 import ContactPage from "./pages/ContactPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedAdminRoute from "../utils/ProtectedAdminRoute";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      {/* 2. Wrap the application with AuthProvider */}
+     
       <AuthProvider>
         <Toaster />
         <Sonner />
@@ -29,8 +31,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
 
-            {/* 3. Add Login and Protected Dashboard Routes */}
+            
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route
               path="/dashboard"
@@ -49,16 +52,11 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route element={<ProtectedAdminRoute />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      </Route>
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/*  ALL CUSTOM ROUTES  */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
