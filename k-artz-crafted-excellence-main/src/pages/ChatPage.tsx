@@ -475,7 +475,7 @@ interface SendMessagePayload {
     email: string;
 }
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://k-artz-server.onrender.com";
 
 const ChatPage = () => {
   const { user } = useAuth();

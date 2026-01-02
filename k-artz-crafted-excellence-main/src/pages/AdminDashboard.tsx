@@ -13,8 +13,8 @@ import { format } from 'date-fns';
 import { Route,useNavigate } from 'react-router-dom';
 
 // --- CONFIG ---
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://k-artz-server.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://k-artz-server.onrender.com';
 
 // --- TYPES ---
 interface ChatSession {
