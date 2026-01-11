@@ -65,101 +65,45 @@ const safeFormatTime = (dateString: string | undefined) => {
   }
 };
 
-// useEffect(() => {
-//     // 1. Get the token we saved during Login
-//     const token = localStorage.getItem('adminToken');
 
-//     // 2. Connect to the backend
-//     // (Make sure this URL matches your backend port, usually 5000)
-//     const newSocket = io("http://localhost:5000"); 
-
-//     // 3. ⭐ CRITICAL STEP: Send the token immediately
-//     if (token) {
-//         console.log("📤 Sending Admin Token to backend...");
-//         newSocket.emit('admin_connect', token);
-//     } else {
-//         console.error("❌ No Admin Token found! Redirecting to login...");
-//         // Optional: window.location.href = '/admin/login';
-//     }
-
-//     // 4. Listen for connection success
-//     newSocket.on('connect', () => {
-//         console.log("✅ Socket connected:", newSocket.id);
-//     });
-
-//     // 5. Store socket in state (if you haven't already)
-//     // setSocket(newSocket); 
-
-//     // 6. Cleanup on unmount
-//     return () => {
-//       newSocket.disconnect();
-//     };
-//   }, []);
-
-//   // --- INITIALIZATION ---
-//   useEffect(() => {
-//     // 1. Connect to Socket
-//     socket.current = io(SOCKET_URL);
-    
-//     socket.current.on('connect', () => {
-//       console.log("✅ Admin Connected to Socket");
-//       setIsConnected(true);
-//       socket.current.emit('admin_connect'); // Join admin room
-//     });
-
-//     // 2. Real-time Incoming Message Handler
-//     socket.current.on('admin_receive_message', (data: any) => {
-//         // Play notification sound here if needed
-//         fetchChats(); // Refresh chat list to show unread/newest
-//         if (selectedChat && selectedChat.userId === data.userId) {
-//              setMessages(prev => [...prev, data]);
-//         }
-//     });
-
-//     // 3. Initial Data Fetch
-//     fetchStats();
-//     fetchChats();
-
-//     return () => { socket.current.disconnect(); };
-//   }, [selectedChat]);
 
 // --- INITIALIZATION & SOCKET CONNECTION ---
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
 
-    // 1. Redirect if no token exists initially
+    //  Redirect if no token exists initially
     if (!token) {
         console.error("❌ No Admin Token found!");
         navigate('/admin/login');
         return;
     }
 
-    // 2. Initialize Socket (Single Instance)
-    // socket.current = io("http://localhost:5000"); // Use this if hardcoded
+    // Initialize Socket (Single Instance)
+    // socket.current = io("http://localhost:5000"); // For Local Testing
     socket.current = io(SOCKET_URL); // Better to use your config constant
 
-    // 3. Setup Event Listeners
+    //  Setup Event Listeners
     socket.current.on('connect', () => {
       console.log("✅ Admin Socket Connected:", socket.current.id);
       setIsConnected(true);
       
-      // ⚡ AUTHENTICATE IMMEDIATELY
+      // AUTHENTICATE IMMEDIATELY
       console.log("📤 Sending Admin Token...");
       socket.current.emit('admin_connect', token);
     });
 
-    // 4. 🔒 HANDLE AUTH ERRORS (Password Changed / Invalid Token)
+    // 4. HANDLE AUTH ERRORS (Password Changed / Invalid Token)
     socket.current.on('error_message', (msg: string) => {
         console.error("⛔ Auth Error:", msg);
         
-        // A. Alert the user
+        //  Alert the user
         alert(msg); // "Session expired. Please login again."
         
-        // B. Clear local storage
+        //  Clear local storage
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminEmail');
 
-        // C. Force Redirect to Login
+        //  Force Redirect to Login
         navigate('/admin/login');
     });
 
@@ -238,7 +182,7 @@ const safeFormatTime = (dateString: string | undefined) => {
 
         const data = await res.json();
 
-        // 3. Crash Prevention: Ensure data is actually an array
+        // Crash Prevention: Ensure data is actually an array
         if (Array.isArray(data)) {
             setMessages(data);
             // Auto-scroll to bottom
@@ -253,7 +197,7 @@ const safeFormatTime = (dateString: string | undefined) => {
         // Optional: Show an error message in the chat window
         setMessages([{ 
             _id: 'error', 
-            content: "⚠️ Could not load history. Check console/network tab.", 
+            content: " Could not load history. Check console/network tab.", 
             senderType: 'system', 
             createdAt: new Date().toISOString() 
         } as Message]);
@@ -267,17 +211,17 @@ const safeFormatTime = (dateString: string | undefined) => {
 
     console.log("Taking over chat for:", selectedChat.userId); // Debug log
 
-    // 1. Tell Backend to switch status
+    // Tell Backend to switch status
     socket.current.emit('admin_join_chat', { userId: selectedChat.userId });
     
-    // 2. Update UI instantly (Optimistic update)
+    //  Update UI instantly (Optimistic update)
     setSelectedChat(prev => prev ? { ...prev, status: 'human_active' } : null);
     
     setChats(prev => prev.map(c => 
         c.userId === selectedChat.userId ? { ...c, status: 'human_active' } : c
     ));
     
-    // 3. Add "System Message" to the visual log
+    //  Add "System Message" to the visual log
     setMessages(prev => [...prev, { 
         _id: Date.now().toString(), 
         content: "👨‍💼 You joined the chat. AI Paused.", 
