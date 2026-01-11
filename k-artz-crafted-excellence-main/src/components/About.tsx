@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
-// --- Types ---
+
 type Theme = 'dark' | 'light';
 
 interface AboutProps {
@@ -10,7 +10,7 @@ interface AboutProps {
 }
 
 const About: React.FC<AboutProps> = ({ className = '' }) => {
-  // --- State ---
+  
   const [theme, setTheme] = useState<Theme>('dark');
   const [isEnlightened, setIsEnlightened] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
@@ -89,10 +89,7 @@ const About: React.FC<AboutProps> = ({ className = '' }) => {
           {/* Background Texture/Glow for Studio Ambience */}
           {/* <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,#1a120e_0%,#000000_70%)] opacity-80 pointer-events-none" /> */}
 
-          {/* WRAPPER FOR PLATE 
-              Replaced the rotating neon div with a static golden border wrapper 
-              that has the 'gold-breathe' animation.
-          */}
+         
           <div className="relative p-[10px] rounded-xl gold-breathe border-2 border-yellow-200/50">
             
             {/* The Plate Itself */}
