@@ -55,7 +55,7 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li>+91 9822110512</li>
-              <li>k.artz.signs@gmail.com</li>
+              <li>contact@kartzsignage.com</li>
               <li>Pune, Maharashtra</li>
             </ul>
           </div>
