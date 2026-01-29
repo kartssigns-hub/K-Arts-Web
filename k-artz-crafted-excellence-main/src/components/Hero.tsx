@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Award, ArrowUpRight } from 'lucide-react';
 import { Button } from './ui/button';
+import { useNavigate } from 'react-router-dom';
 
 // --- DATA ---
 const projects = [
@@ -59,6 +60,7 @@ const variants = {
 
 const Hero = () => {
   const [[page, direction], setPage] = useState([0, 0]);
+  const navigate = useNavigate();
 
   // Calculate current index
   const imageIndex = Math.abs(page % projects.length);
@@ -120,7 +122,7 @@ we build designs that make people remember you"
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
-            <Button className="h-14 px-8 text-base bg-white text-black hover:bg-slate-200 rounded-full transition-transform hover:scale-105">
+            <Button onClick={() => navigate('/chat')} className="h-14 px-8 text-base bg-white text-black hover:bg-slate-200 rounded-full transition-transform hover:scale-105">
               Let's Get Started
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
