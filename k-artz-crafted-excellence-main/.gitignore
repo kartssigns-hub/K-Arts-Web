@@ -177,3 +177,4 @@ pids/
 
 # Keep an example file for envs if present
 !.env.example
+CATALOG_PLAN.md

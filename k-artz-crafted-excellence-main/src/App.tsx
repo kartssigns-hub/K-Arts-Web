@@ -11,16 +11,26 @@ import ReactGA from "react-ga4";
 
 // 1. Import Auth Context and Pages
 import { AuthProvider } from "./context/AuthContext";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
-
-import ChatPage from "./pages/ChatPage";
-import ContactPage from "./pages/ContactPage";
-import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedAdminRoute from "../utils/ProtectedAdminRoute";
-import AdminLogin from "./pages/AdminLogin";
-import { useEffect } from "react";
+
+import ContactPage from "./pages/ContactPage";
+import CatalogPage from "./pages/CatalogPage";
+import CatalogEntryPage from "./pages/CatalogEntryPage";
+import ScrollToTop from "./components/ScrollToTop";
+import WhatsAppFloat from "./components/WhatsAppFloat";
+import { Suspense, lazy, useEffect } from "react";
+
+/**
+ * Signed-in and admin areas are code-split. They pull in socket.io and recharts,
+ * which no public visitor needs — keeping them out of the initial bundle makes
+ * the homepage and catalog noticeably lighter to load.
+ */
+const Login = lazy(() => import("./pages/Login"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ChatPage = lazy(() => import("./pages/ChatPage"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -37,44 +47,63 @@ const AnalyticsTracker = () => {
   return null;
 };
 
+const RouteFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div
+      className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent"
+      role="status"
+      aria-label="Loading"
+    />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-     
+
       <AuthProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
         <AnalyticsTracker />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chat"
-              element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              }
-            />
+        <ScrollToTop />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/contact" element={<ContactPage />} />
 
-            <Route element={<ProtectedAdminRoute />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      </Route>
+              {/*  CATALOG  */}
+              <Route path="/catalog" element={<CatalogPage />} />
+              <Route path="/catalog/:slug" element={<CatalogEntryPage />} />
 
-            {/*  ALL CUSTOM ROUTES  */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route element={<ProtectedAdminRoute />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              </Route>
+
+              {/*  ALL CUSTOM ROUTES  */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <WhatsAppFloat />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
