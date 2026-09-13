@@ -16,7 +16,7 @@ const About: React.FC<AboutProps> = ({ className = '' }) => {
   const [isSweeping, setIsSweeping] = useState(false);
 
   // Refs for cleanup
-  const sweepTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sweepTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Handlers ---
   const toggleTheme = () => {
@@ -55,7 +55,7 @@ const About: React.FC<AboutProps> = ({ className = '' }) => {
   const goldGradient = "bg-gradient-to-br from-yellow-600 via-yellow-200 to-yellow-600";
   
   return (
-    <div className={`relative w-full min-h-screen font-sans transition-colors duration-300 ease-in-out ${bgMain} ${className}`}>
+    <div id="about" className={`relative w-full min-h-screen font-sans transition-colors duration-300 ease-in-out ${bgMain} ${className}`}>
       {/* Custom Styles for specific animations */}
       <style>{`
         @keyframes breathe {
@@ -108,8 +108,10 @@ const About: React.FC<AboutProps> = ({ className = '' }) => {
                    boxShadow: 'inset 0 0 30px rgba(0, 0, 0, 0.8), 0 10px 25px rgba(0,0,0,0.5)'
                  }}>
               
-              {/* The Text Effect - Changed casing and removed uppercase class */}
-              <h1 
+              {/* Decorative wordmark, not a heading — the page's real heading
+                  hierarchy lives in the hero (h1) and "About Kartz" (h2). */}
+              <div
+                aria-hidden="true"
                 className={`
                   relative m-0 font-display text-[clamp(60px,12vw,110px)] font-black tracking-[2px] leading-none
                   text-transparent bg-clip-text transition-all duration-700
@@ -129,7 +131,7 @@ const About: React.FC<AboutProps> = ({ className = '' }) => {
                 >
                   K'artz
                 </span>
-              </h1>
+              </div>
             </div>
           </div>
 

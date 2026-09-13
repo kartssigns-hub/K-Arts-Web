@@ -1,28 +1,43 @@
 
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
+import { IMAGES } from '@/data/catalog/images';
 
-const categories = ['All', 'Name Plates', 'LED Boards', 'Signage'];
+const categories = ['All', 'Name Plates', 'LED Boards'];
 
+// A hand-picked showcase — only the strongest photographs. Titles describe what
+// each one actually shows. Name plates and boards alternate so "All" mixes both.
 const works = [
-  { id: 1, category: 'Name Plates', image: '/Aadams.png', title: 'Brass Name Plate', description: 'Premium engraved brass finish' },
-  { id: 2, category: 'LED Boards', image: '/ledb2.png', title: 'Storefront LED', description: 'Vibrant outdoor LED display' },
-  { id: 3, category: 'Signage', image: '/sign1.png', title: 'Corporate Signage', description: '3D illuminated company logo' },
-  { id: 4, category: 'Name Plates', image: '/plate2.png', title: 'Acrylic Name Plate', description: 'Modern transparent design' },
-  { id: 5, category: 'LED Boards', image: '/ledb1.png', title: 'Digital Menu Board', description: 'Restaurant LED display' },
-  { id: 6, category: 'Signage', image: '/sign2.png', title: 'Directional Signs', description: 'Interior wayfinding system' },
-  
-  { id: 7, category: 'Name Plates', image: '/plate3.png', title: 'Directional Signs', description: 'Interior wayfinding system' },
+  { id: 1, category: 'LED Boards', image: IMAGES.vardaanBacklitBoard, title: 'Salon & Spa Shop Board', description: 'Halo-lit gold mirror letters and lotus logo' },
+  { id: 2, category: 'Name Plates', image: IMAGES.backlitAcrylicPlate, title: 'Backlit Acrylic Name Plate', description: 'Warm LED glow behind laser-cut acrylic' },
+  { id: 3, category: 'LED Boards', image: IMAGES.cakeOClockAcpBoard, title: 'Bakery Shop Board', description: 'Raised acrylic letters and a lit logo panel on ACP' },
+  { id: 4, category: 'Name Plates', image: IMAGES.haloLitDoorPlate, title: 'Halo-Lit Door Name Plate', description: 'Backlit letters on a frosted panel' },
+  { id: 5, category: 'Name Plates', image: IMAGES.backlitWoodenPlate, title: 'Backlit Wooden Name Plate', description: 'Cut-out lettering and Ram motif lit from behind' },
+  { id: 6, category: 'LED Boards', image: IMAGES.kalashreeAcrylicBoard, title: '3D Letter Shop Board', description: 'Raised acrylic Devanagari lettering on a brown panel' },
+  { id: 7, category: 'Name Plates', image: IMAGES.woodGrainPlate, title: 'Wood Grain Name Plate', description: 'Raised white letters on a wood-grain panel' },
 ];
 
 const Works = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedWork, setSelectedWork] = useState<typeof works[0] | null>(null);
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+
+  // Escape closes the lightbox — expected behaviour for any modal image view.
+  useEffect(() => {
+    if (!selectedWork) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedWork(null);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedWork]);
 
   const filteredWorks = selectedCategory === 'All'
     ? works
@@ -37,11 +52,20 @@ const Works = () => {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Our <span className="text-yellow-100">  Works </span>
+          <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+            Our Recent Work
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 mt-3">
+            See Our Work in Action
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Explore our portfolio of stunning signage solutions
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
+            Real signage we have designed, built and installed for our customers.
+          </p>
+          <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-8">
+            Looking for what you can order?{' '}
+            <Link to="/catalog" className="font-semibold text-accent hover:underline">
+              Browse the full catalog →
+            </Link>
           </p>
 
           {/* Filter Buttons */}
@@ -70,11 +94,22 @@ const Works = () => {
               transition={{ duration: 0.4, delay: index * 0.1 }}
               whileHover={{ scale: 1.05 }}
               onClick={() => setSelectedWork(work)}
-              className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-2xl"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedWork(work);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`View ${work.title} larger`}
+              className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <img
                 src={work.image}
-                alt={work.title}
+                alt={`${work.title} — ${work.description}`}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -95,6 +130,9 @@ const Works = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setSelectedWork(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedWork.title}
           className="fixed inset-0 bg-background/95 backdrop-blur-lg z-50 flex items-center justify-center p-6"
         >
           <Button
