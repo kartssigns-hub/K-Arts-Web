@@ -1,20 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  LayoutDashboard, MessageSquare, ShoppingBag, 
-  Users, TrendingUp, Bell, Search, LogOut, 
-  CheckCircle2, AlertCircle, Clock, Send, X
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  LayoutDashboard, MessageSquare, ShoppingBag,
+  Users, TrendingUp, Bell, Search, LogOut,
+  Clock, Send, Inbox, Phone, Mail
 } from 'lucide-react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, AreaChart, Area 
+import {
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
-import { io } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 import { format } from 'date-fns';
-import { Route,useNavigate } from 'react-router-dom';
-
-// --- CONFIG ---
-const API_URL = import.meta.env.VITE_API_URL || 'https://k-artz-server.onrender.com';
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://k-artz-server.onrender.com';
+import { useNavigate } from 'react-router-dom';
+import { API_URL, AdminAuthError, adminFetch, clearAdminSession, getAdminToken } from '@/config/api';
+import { enquiryServiceLabel } from '@/config/business';
+import { logger } from '@/lib/monitoring';
 
 // --- TYPES ---
 interface ChatSession {
@@ -34,6 +33,56 @@ interface Message {
   createdAt: string;
 }
 
+/** Shape returned by GET /api/chat/history/:uid (shared with the customer chat widget). */
+interface HistoryMessage {
+  id?: string;
+  _id?: string;
+  content: string;
+  senderType: Message['senderType'];
+  timestamp?: string;
+  createdAt?: string;
+}
+
+/** Payload of the 'admin_receive_message' socket event. */
+interface IncomingMessage {
+  chatId: string;
+  userId: string;
+  content: string;
+  timestamp: string;
+}
+
+type EnquiryStatus = 'new' | 'contacted' | 'closed';
+
+interface Enquiry {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  service?: string;
+  message?: string;
+  status: EnquiryStatus;
+  createdAt: string;
+}
+
+const ENQUIRY_STATUS_STYLES: Record<EnquiryStatus, string> = {
+  new: 'bg-yellow-900/30 text-yellow-500 border-yellow-900/50',
+  contacted: 'bg-blue-900/30 text-blue-400 border-blue-900/50',
+  closed: 'bg-gray-800 text-gray-400 border-gray-700',
+};
+
+/** wa.me wants the international number without "+"; bare 10-digit numbers are Indian mobiles. */
+const toWhatsAppNumber = (phone: string) => {
+  const digits = phone.replace(/\D/g, '').replace(/^0(?=\d{10}$)/, '');
+  return digits.length === 10 ? `91${digits}` : digits;
+};
+
+// Helper to safely format dates without crashing
+const safeFormat = (dateString: string | undefined, pattern = 'HH:mm') => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? '' : format(date, pattern);
+};
+
 const AdminDashboard = () => {
   // --- STATE ---
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -46,161 +95,164 @@ const AdminDashboard = () => {
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [inputText, setInputText] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const navigate=useNavigate();
-  const socket = useRef<any>(null);
+  const navigate = useNavigate();
+  const socket = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sessionEnded = useRef(false);
 
-  // Helper to safely format dates without crashing
-const safeFormatTime = (dateString: string | undefined) => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    // Check if date is "Invalid Date"
-    if (isNaN(date.getTime())) return ''; 
-    return format(date, 'HH:mm');
-  } catch (error) {
-    return '';
-  }
-};
-
-
-
-// --- INITIALIZATION & SOCKET CONNECTION ---
+  // Read by socket handlers, which are registered once and would otherwise see a stale selection
+  const selectedChatRef = useRef<ChatSession | null>(null);
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
 
-    //  Redirect if no token exists initially
+  const endSession = useCallback((reason?: string) => {
+    // Several requests can fail with 401 at once; only alert and redirect once
+    if (sessionEnded.current) return;
+    sessionEnded.current = true;
+
+    if (reason) alert(reason);
+    socket.current?.disconnect();
+    clearAdminSession();
+    navigate('/admin/login');
+  }, [navigate]);
+
+  const handleApiError = useCallback((message: string, err: unknown) => {
+    if (err instanceof AdminAuthError) {
+      endSession(err.message);
+      return;
+    }
+    logger.error(message, err);
+  }, [endSession]);
+
+  // --- API CALLS ---
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/admin/stats');
+      if (!res.ok) throw new Error(`Stats request failed (${res.status})`);
+      setStats(await res.json());
+    } catch (err) { handleApiError('Failed to load admin stats', err); }
+  }, [handleApiError]);
+
+  const fetchChats = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/admin/chats');
+      if (!res.ok) throw new Error(`Chats request failed (${res.status})`);
+      const data: unknown = await res.json();
+      setChats(Array.isArray(data) ? data : []);
+    } catch (err) { handleApiError('Failed to load chats', err); }
+  }, [handleApiError]);
+
+  const fetchEnquiries = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/admin/enquiries');
+      if (!res.ok) throw new Error(`Enquiries request failed (${res.status})`);
+      const data: unknown = await res.json();
+      setEnquiries(Array.isArray(data) ? data : []);
+    } catch (err) { handleApiError('Failed to load enquiries', err); }
+  }, [handleApiError]);
+
+  // --- INITIALIZATION & SOCKET CONNECTION ---
+  useEffect(() => {
+    const token = getAdminToken();
     if (!token) {
-        console.error("❌ No Admin Token found!");
-        navigate('/admin/login');
-        return;
+      navigate('/admin/login');
+      return;
     }
 
-    // Initialize Socket (Single Instance)
-    // socket.current = io("http://localhost:5000"); // For Local Testing
-    socket.current = io(SOCKET_URL); // Better to use your config constant
+    // One connection for the whole session. The server treats a disconnect as the
+    // admin leaving and hands every live chat back to the AI, so this must not
+    // reconnect when, for example, a different chat is selected.
+    const client = io(API_URL);
+    socket.current = client;
 
-    //  Setup Event Listeners
-    socket.current.on('connect', () => {
-      console.log("✅ Admin Socket Connected:", socket.current.id);
+    client.on('connect', () => {
       setIsConnected(true);
-      
-      // AUTHENTICATE IMMEDIATELY
-      console.log("📤 Sending Admin Token...");
-      socket.current.emit('admin_connect', token);
+      // Authenticate on every (re)connect
+      client.emit('admin_connect', token);
     });
 
-    // 4. HANDLE AUTH ERRORS (Password Changed / Invalid Token)
-    socket.current.on('error_message', (msg: string) => {
-        console.error("⛔ Auth Error:", msg);
-        
-        //  Alert the user
-        alert(msg); // "Session expired. Please login again."
-        
-        //  Clear local storage
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminEmail');
+    client.on('disconnect', () => setIsConnected(false));
 
-        //  Force Redirect to Login
-        navigate('/admin/login');
+    // Invalid token or password changed
+    client.on('error_message', (msg: string) => endSession(msg));
+
+    client.on('admin_receive_message', (data: IncomingMessage) => {
+      fetchChats();
+      if (selectedChatRef.current?.userId === data.userId) {
+        setMessages(prev => [...prev, {
+          _id: `${data.timestamp}-${prev.length}`,
+          content: data.content,
+          senderType: 'user',
+          createdAt: data.timestamp
+        }]);
+      }
     });
 
-    // 5. Real-time Incoming Message Handler
-    socket.current.on('admin_receive_message', (data: any) => {
-        fetchChats(); // Refresh list
-        if (selectedChat && selectedChat.userId === data.userId) {
-             setMessages(prev => [...prev, data]);
-        }
-    });
+    client.on('admin_new_enquiry', () => fetchEnquiries());
 
-    // 6. Initial API Data Fetch
     fetchStats();
     fetchChats();
+    fetchEnquiries();
 
-    // 7. Cleanup
     return () => {
-      if (socket.current) socket.current.disconnect();
+      client.disconnect();
     };
-  }, [selectedChat, navigate]); // Added navigate dependency
+  }, [navigate, endSession, fetchStats, fetchChats, fetchEnquiries]);
 
   const handleLogout = () => {
-    // 1. Disconnect Socket
-    if (socket.current) socket.current.disconnect();
-
-    // 2. Clear Storage
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminEmail');
-
-    // 3. Redirect
+    socket.current?.disconnect();
+    clearAdminSession();
     navigate('/admin/login');
   };
 
-
-  // --- API CALLS ---
-  const fetchStats = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/admin/stats`);
-      const data = await res.json();
-      setStats(data);
-    } catch (err) { console.error("Stats Fetch Error:", err); }
-  };
-
-  const fetchChats = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/admin/chats`);
-      const data = await res.json();
-      setChats(data);
-    } catch (err) { console.error("Chats Fetch Error:", err); }
-  };
-
   const loadChatHistory = async (chat: ChatSession) => {
-    // 1. Set selected chat immediately to switch the UI view
+    // Switch the view immediately; clear previous messages while loading
     setSelectedChat(chat);
-    setMessages([]); // Clear previous messages to show "Loading..." state
+    setMessages([]);
 
     try {
-        console.log(`Fetching history for: ${chat.userId}`);
         const res = await fetch(`${API_URL}/api/chat/history/${chat.userId}`);
-        
-        // 2. Safety Check: Did the API fail?
-        if (!res.ok) {
-            console.error("API Error:", res.status, res.statusText);
-            // Fallback: Use the old route if the new one fails (Backward compatibility)
-            const fallbackRes = await fetch(`${API_URL}/api/chat-history/${chat.userId}`);
-            if (fallbackRes.ok) {
-                const data = await fallbackRes.json();
-                if (Array.isArray(data)) {
-                    setMessages(data);
-                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                    return;
-                }
-            }
-            throw new Error("Failed to load history");
-        }
+        if (!res.ok) throw new Error(`History request failed (${res.status})`);
 
-        const data = await res.json();
+        const data: unknown = await res.json();
+        if (!Array.isArray(data)) throw new Error('Unexpected chat history response');
 
-        // Crash Prevention: Ensure data is actually an array
-        if (Array.isArray(data)) {
-            setMessages(data);
-            // Auto-scroll to bottom
-            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        } else {
-            console.error("Data format error. Expected array, got:", data);
-            setMessages([]); 
-        }
+        setMessages(data.map((msg: HistoryMessage, index) => ({
+            _id: msg.id ?? msg._id ?? `history-${index}`,
+            content: msg.content,
+            senderType: msg.senderType,
+            createdAt: msg.timestamp ?? msg.createdAt ?? ''
+        })));
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err) {
+        logger.error('Failed to load chat history', err);
+        setMessages([{
+            _id: 'error',
+            content: "Could not load history. Please try again.",
+            senderType: 'system',
+            createdAt: new Date().toISOString()
+        }]);
+    }
+  };
 
-    } catch (err) { 
-        console.error("History Error:", err); 
-        // Optional: Show an error message in the chat window
-        setMessages([{ 
-            _id: 'error', 
-            content: " Could not load history. Check console/network tab.", 
-            senderType: 'system', 
-            createdAt: new Date().toISOString() 
-        } as Message]);
+  const updateEnquiryStatus = async (id: string, status: EnquiryStatus) => {
+    const previous = enquiries;
+    setEnquiries(prev => prev.map(e => (e.id === id ? { ...e, status } : e)));
+
+    try {
+      const res = await adminFetch(`/api/admin/enquiries/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) throw new Error(`Enquiry status update failed (${res.status})`);
+    } catch (err) {
+      setEnquiries(previous);
+      handleApiError('Failed to update enquiry status', err);
     }
   };
 
@@ -209,24 +261,22 @@ const safeFormatTime = (dateString: string | undefined) => {
   const handleTakeOver = () => {
     if (!selectedChat) return;
 
-    console.log("Taking over chat for:", selectedChat.userId); // Debug log
-
     // Tell Backend to switch status
-    socket.current.emit('admin_join_chat', { userId: selectedChat.userId });
-    
+    socket.current?.emit('admin_join_chat', { userId: selectedChat.userId });
+
     //  Update UI instantly (Optimistic update)
     setSelectedChat(prev => prev ? { ...prev, status: 'human_active' } : null);
-    
-    setChats(prev => prev.map(c => 
+
+    setChats(prev => prev.map(c =>
         c.userId === selectedChat.userId ? { ...c, status: 'human_active' } : c
     ));
-    
+
     //  Add "System Message" to the visual log
-    setMessages(prev => [...prev, { 
-        _id: Date.now().toString(), 
-        content: "👨‍💼 You joined the chat. AI Paused.", 
-        senderType: 'system', 
-        createdAt: new Date().toISOString() 
+    setMessages(prev => [...prev, {
+        _id: Date.now().toString(),
+        content: "👨‍💼 You joined the chat. AI Paused.",
+        senderType: 'system',
+        createdAt: new Date().toISOString()
     }]);
   };
 
@@ -240,7 +290,7 @@ const safeFormatTime = (dateString: string | undefined) => {
     };
 
     // Emit to backend
-    socket.current.emit('admin_send_message', payload);
+    socket.current?.emit('admin_send_message', payload);
 
     // Update UI immediately
     setMessages(prev => [...prev, {
@@ -249,14 +299,14 @@ const safeFormatTime = (dateString: string | undefined) => {
         senderType: 'admin',
         createdAt: new Date().toISOString()
     }]);
-    
+
     setInputText('');
   };
 
 
   return (
     <div className="flex h-screen bg-[#050511] text-gray-100 font-sans overflow-hidden">
-      
+
       {/* SIDEBAR */}
       <aside className="w-64 bg-[#0a0a1a] border-r border-gray-800 flex flex-col">
         <div className="p-6 flex items-center gap-3">
@@ -268,6 +318,7 @@ const safeFormatTime = (dateString: string | undefined) => {
           {[
             { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
             { id: 'chats', icon: MessageSquare, label: 'Live Chats', badge: chats.filter(c => c.unread > 0).length },
+            { id: 'enquiries', icon: Inbox, label: 'Enquiries', badge: enquiries.filter(e => e.status === 'new').length },
             { id: 'orders', icon: ShoppingBag, label: 'Orders' },
             { id: 'users', icon: Users, label: 'Customers' },
           ].map((item) => (
@@ -275,8 +326,8 @@ const safeFormatTime = (dateString: string | undefined) => {
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
-                activeTab === item.id 
-                  ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' 
+                activeTab === item.id
+                  ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -290,11 +341,11 @@ const safeFormatTime = (dateString: string | undefined) => {
             </button>
           ))}
         </nav>
-        
+
         <div className="p-4 border-t border-gray-800">
-             <div className="flex items-center gap-2 text-green-500 text-sm mb-4">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                System Operational
+             <div className={`flex items-center gap-2 text-sm mb-4 ${isConnected ? 'text-green-500' : 'text-gray-500'}`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></span>
+                {isConnected ? 'Live updates on' : 'Connecting…'}
              </div>
              <button onClick={handleLogout} className="flex items-center gap-2 text-gray-400 hover:text-white w-full px-4 py-2 hover:bg-white/5 rounded-lg transition-colors">
                 <LogOut   size={18} /> Logout
@@ -322,7 +373,7 @@ const safeFormatTime = (dateString: string | undefined) => {
 
         {/* CONTENT SCROLL AREA */}
         <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
-            
+
             {/* --- DASHBOARD VIEW --- */}
             {activeTab === 'dashboard' && (
                 <div className="space-y-8">
@@ -355,8 +406,8 @@ const safeFormatTime = (dateString: string | undefined) => {
                             <div className="h-[300px] w-full min-h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={[
-                                        { name: 'Mon', visits: 40 }, { name: 'Tue', visits: 30 }, 
-                                        { name: 'Wed', visits: 60 }, { name: 'Thu', visits: 45 }, 
+                                        { name: 'Mon', visits: 40 }, { name: 'Tue', visits: 30 },
+                                        { name: 'Wed', visits: 60 }, { name: 'Thu', visits: 45 },
                                         { name: 'Fri', visits: 90 }, { name: 'Sat', visits: 70 }
                                     ]}>
                                         <defs>
@@ -394,6 +445,79 @@ const safeFormatTime = (dateString: string | undefined) => {
                 </div>
             )}
 
+            {/* --- ENQUIRIES VIEW (contact form submissions) --- */}
+            {activeTab === 'enquiries' && (
+                <div className="bg-[#0a0a1a] border border-gray-800 rounded-2xl overflow-hidden">
+                    <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Contact form enquiries</h3>
+                        <button onClick={fetchEnquiries} className="text-sm text-gray-400 hover:text-yellow-500 transition-colors">
+                            Refresh
+                        </button>
+                    </div>
+
+                    {enquiries.length === 0 ? (
+                        <div className="p-12 flex flex-col items-center text-center text-gray-500">
+                            <Inbox size={48} className="mb-4 opacity-20" />
+                            <p>No enquiries yet. Submissions from the contact page will appear here.</p>
+                        </div>
+                    ) : (
+                        <ul className="divide-y divide-gray-800">
+                            {enquiries.map((enquiry) => (
+                                <li key={enquiry.id} className="p-5 flex flex-col lg:flex-row lg:items-start gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                                            <span className="font-semibold text-gray-100">{enquiry.name}</span>
+                                            {enquiry.service && (
+                                                <span className="text-[10px] uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded">
+                                                    {enquiryServiceLabel(enquiry.service) ?? enquiry.service}
+                                                </span>
+                                            )}
+                                            <span className="text-xs text-gray-500">{safeFormat(enquiry.createdAt, 'dd MMM yyyy, HH:mm')}</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-400 mb-2">
+                                            <a href={`tel:${enquiry.phone}`} className="flex items-center gap-1.5 hover:text-yellow-500 transition-colors">
+                                                <Phone size={14} /> {enquiry.phone}
+                                            </a>
+                                            {enquiry.email && (
+                                                <a href={`mailto:${enquiry.email}`} className="flex items-center gap-1.5 hover:text-yellow-500 transition-colors break-all">
+                                                    <Mail size={14} /> {enquiry.email}
+                                                </a>
+                                            )}
+                                            <a
+                                                href={`https://wa.me/${toWhatsAppNumber(enquiry.phone)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[#25D366] hover:underline"
+                                            >
+                                                WhatsApp
+                                            </a>
+                                        </div>
+                                        {enquiry.message && (
+                                            <p className="text-sm text-gray-300 whitespace-pre-line break-words">{enquiry.message}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <span className={`text-[10px] px-2 py-0.5 rounded border capitalize ${ENQUIRY_STATUS_STYLES[enquiry.status]}`}>
+                                            {enquiry.status}
+                                        </span>
+                                        <select
+                                            value={enquiry.status}
+                                            onChange={(e) => updateEnquiryStatus(enquiry.id, e.target.value as EnquiryStatus)}
+                                            aria-label={`Status for ${enquiry.name}`}
+                                            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-yellow-500"
+                                        >
+                                            <option value="new">New</option>
+                                            <option value="contacted">Contacted</option>
+                                            <option value="closed">Closed</option>
+                                        </select>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
+
             {/* --- CHATS VIEW (FULL INTERFACE) --- */}
             {activeTab === 'chats' && (
                 <div className="flex h-[calc(100vh-140px)] gap-6">
@@ -404,14 +528,14 @@ const safeFormatTime = (dateString: string | undefined) => {
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             {chats.map(chat => (
-                                <div 
+                                <div
                                     key={chat._id}
                                     onClick={() => loadChatHistory(chat)}
                                     className={`p-4 border-b border-gray-800 cursor-pointer hover:bg-white/5 transition-colors ${selectedChat?._id === chat._id ? 'bg-yellow-500/10 border-l-4 border-l-yellow-500' : ''}`}
                                 >
                                     <div className="flex justify-between mb-1">
                                         <span className="font-semibold text-gray-200">{chat.userEmail}</span>
-                                       <span className="text-xs text-gray-500">{safeFormatTime(chat.updatedAt)}</span>
+                                       <span className="text-xs text-gray-500">{safeFormat(chat.updatedAt)}</span>
                                     </div>
                                     <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
                                     <div className="flex gap-2 mt-2">
@@ -442,7 +566,7 @@ const safeFormatTime = (dateString: string | undefined) => {
                                         </div>
                                     </div>
                                     {selectedChat.status === 'ai_active' && (
-                                        <button 
+                                        <button
                                             onClick={handleTakeOver}
                                             className="bg-yellow-600 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
                                         >
@@ -456,8 +580,8 @@ const safeFormatTime = (dateString: string | undefined) => {
                                     {messages.map((msg) => (
                                         <div key={msg._id} className={`flex ${msg.senderType === 'user' ? 'justify-start' : 'justify-end'}`}>
                                             <div className={`max-w-[70%] p-4 rounded-2xl text-sm leading-relaxed ${
-                                                msg.senderType === 'user' 
-                                                    ? 'bg-[#1a1a2e] text-gray-200 rounded-tl-none' 
+                                                msg.senderType === 'user'
+                                                    ? 'bg-[#1a1a2e] text-gray-200 rounded-tl-none'
                                                     : msg.senderType === 'system'
                                                     ? 'bg-transparent text-yellow-500 text-center w-full italic border border-yellow-500/20'
                                                     : 'bg-gradient-to-br from-yellow-600 to-yellow-500 text-black font-medium rounded-tr-none shadow-lg shadow-yellow-500/10'
@@ -465,7 +589,7 @@ const safeFormatTime = (dateString: string | undefined) => {
                                                 {msg.senderType === 'ai' && <span className="text-[10px] uppercase font-bold opacity-50 block mb-1">AI Assistant</span>}
                                                 {msg.content}
                                                 <span className={`text-[10px] block mt-2 opacity-60 ${msg.senderType === 'user' ? 'text-gray-500' : 'text-black'}`}>
-                                                    {safeFormatTime(msg.createdAt)}
+                                                    {safeFormat(msg.createdAt)}
                                                 </span>
                                             </div>
                                         </div>
@@ -476,8 +600,8 @@ const safeFormatTime = (dateString: string | undefined) => {
                                 {/* Input */}
                                 <div className="p-4 border-t border-gray-800 bg-[#0d0d1f]">
                                     <div className="flex gap-4">
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={inputText}
                                             onChange={(e) => setInputText(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
@@ -485,7 +609,7 @@ const safeFormatTime = (dateString: string | undefined) => {
                                             disabled={selectedChat.status === 'ai_active'}
                                             className="flex-1 bg-[#1a1a2e] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
-                                        <button 
+                                        <button
                                             onClick={sendMessage}
                                             disabled={selectedChat.status === 'ai_active'}
                                             className="bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-xl disabled:opacity-50 disabled:grayscale transition-all"
