@@ -6,32 +6,43 @@ import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 
 // --- DATA ---
+/**
+ * Hero videos live in public/hero/ and are pre-encoded for instant start:
+ * cropped to the card's 4:5 frame (576x720), H.264, no audio track, and
+ * "faststart" (index at the front, so playback begins after the first bytes).
+ * Each has a first-frame poster so the card is never blank while it loads.
+ *
+ * public/hero/ is served with a one-year immutable cache (vercel.json), so when
+ * replacing a video give it a NEW filename rather than overwriting the old one.
+ */
 const projects = [
   {
     id: 1,
-    client: "Luxe Hotel & Spa",
-    type: "Architectural Signage",
-    material: "Brushed Gold & LED",
-    // Ensure your videos are compressed for web (H.264 / mp4) for 60fps performance
-    videoUrl: "/k1.mp4", 
-    fallbackColor: "bg-amber-900", // Shows while video loads
+    client: "",
+    type: "Acrylic Plate Designs",
+    material: "Premium Acrylic & LED Backlit",
+    videoUrl: "/hero/k1.mp4",
+    poster: "/hero/k1.jpg",
+    fallbackColor: "bg-slate-900",
   },
   {
     id: 2,
     client: "TechSpace Hub",
-    type: "Neon Branding",
-    material: "Acrylic & Neon Flex",
-    videoUrl: "/k2.mp4",
+    type: "Acrylic Plate Designs",
+    material: "Acrylic with Neon Effects",
+    videoUrl: "/hero/k2.mp4",
+    poster: "/hero/k2.jpg",
     fallbackColor: "bg-blue-900",
   },
   {
     id: 3,
-    client: "Urban Coffee Co.",
-    type: "3D Lettering",
-    material: "Matte Black Steel",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    fallbackColor: "bg-stone-800",
-  }
+    client: "",
+    type: "Acrylic Name Plates",
+    material: "Acrylic with Brass Standoffs",
+    videoUrl: "/hero/nameplate.mp4",
+    poster: "/hero/nameplate.jpg",
+    fallbackColor: "bg-neutral-900",
+  },
 ];
 
 // Optimized Variants for GPU-accelerated transitions
@@ -75,8 +86,27 @@ const Hero = () => {
     return () => clearInterval(timer);
   }, [page]);
 
+  // Warm the browser cache with the NEXT slide's poster and video while the
+  // current one plays, so each transition starts instantly instead of loading.
+  useEffect(() => {
+    const next = projects[(imageIndex + 1) % projects.length];
+    const links = [
+      { href: next.poster, as: "image" },
+      { href: next.videoUrl, as: "video" },
+    ].map(({ href, as }) => {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = href;
+      link.as = as;
+      document.head.appendChild(link);
+      return link;
+    });
+
+    return () => links.forEach((link) => link.remove());
+  }, [imageIndex]);
+
   return (
-    <section className="relative min-h-screen bg-slate-950 overflow-hidden flex items-center justify-center p-4 lg:p-12">
+    <section id="home" className="relative min-h-screen bg-slate-950 overflow-hidden flex items-center justify-center p-4 lg:p-12">
       
       {/* --- BACKGROUND EFFECTS --- */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -122,9 +152,19 @@ we build designs that make people remember you"
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
-            <Button onClick={() => navigate('/chat')} className="h-14 px-8 text-base bg-white text-black hover:bg-slate-200 rounded-full transition-transform hover:scale-105">
-              Let's Get Started
+            <Button
+              onClick={() => navigate('/catalog')}
+              className="h-14 px-8 text-base bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-full transition-transform hover:scale-105"
+            >
+              Explore Catalog
               <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => navigate('/chat')}
+              variant="outline"
+              className="h-14 px-8 text-base bg-transparent border-white/20 text-white hover:bg-white hover:text-black rounded-full transition-transform hover:scale-105"
+            >
+              Let's Get Started
             </Button>
           </div>
         </div>
@@ -154,6 +194,7 @@ we build designs that make people remember you"
                   <video
                     key={currentProject.videoUrl} // Key ensures video reloads on change
                     src={currentProject.videoUrl}
+                    poster={currentProject.poster}
                     className="w-full h-full object-cover"
                     autoPlay
                     muted
