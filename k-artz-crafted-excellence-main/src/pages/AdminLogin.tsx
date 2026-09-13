@@ -1,5 +1,6 @@
 import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '@/config/api';
 
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -31,8 +32,7 @@ const AdminLogin: React.FC = () => {
     setError('');
 
     try {
-      // Replace with your actual Backend URL
-      const response = await fetch('https://k-artz-server.onrender.com/api/admin/login', {
+      const response = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

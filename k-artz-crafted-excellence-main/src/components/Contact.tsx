@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { BUSINESS } from '@/config/business';
 
 const Contact = () => {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
@@ -30,9 +31,9 @@ const Contact = () => {
   };
 
   const contactInfo = [
-    { icon: Phone, label: 'Phone', value: '+91 9822110512', href: 'tel:+919822110512' },
-    { icon: Mail, label: 'Email', value: 'k.artz.signs@gmail.com', href: 'mailto:k.artz.signs.com' },
-    { icon: MapPin, label: 'Location', value: 'Pune, Maharashtra, India', href: '#' },
+    { icon: Phone, label: 'Phone', value: BUSINESS.phone, href: BUSINESS.phoneHref },
+    { icon: Mail, label: 'Email', value: BUSINESS.email, href: BUSINESS.emailHref },
+    { icon: MapPin, label: 'Location', value: BUSINESS.city, href: '#' },
   ];
 
   return (
