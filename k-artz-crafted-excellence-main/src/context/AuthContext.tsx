@@ -1,3 +1,4 @@
+import { logger } from "@/lib/monitoring";
 import React, { createContext, useEffect, useState, ReactNode } from "react";
 import { 
   User, 
@@ -51,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, googleProvider);
       await syncUserToFirestore(result.user, "google");
     } catch (error) {
-      console.error("Google Auth Error", error);
+      logger.warn("Google sign-in failed", { code: (error as { code?: string })?.code });
       throw error;
     }
   };

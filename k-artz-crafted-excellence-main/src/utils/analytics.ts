@@ -1,13 +1,11 @@
 import ReactGA from "react-ga4";
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
-// OR import.meta.env.VITE_GA_MEASUREMENT_ID for Vite
 
 export const initGA = () => {
   if (GA_MEASUREMENT_ID) {
     ReactGA.initialize(GA_MEASUREMENT_ID);
-    console.log("GA Initialized");
-  } else {
+  } else if (import.meta.env.DEV) {
     console.warn("GA Measurement ID is missing");
   }
 };
@@ -19,6 +17,7 @@ export const initGA = () => {
  * @param label - Optional details (e.g., 'Prompt length: 50')
  */
 export const trackEvent = (category: string, action: string, label?: string) => {
+  if (!GA_MEASUREMENT_ID) return;
   ReactGA.event({
     category,
     action,
