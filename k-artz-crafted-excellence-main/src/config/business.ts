@@ -14,11 +14,11 @@ export const BUSINESS = {
   legalName: 'Kalashree Arts',
   established: 1997,
 
-  phone: '+91 9822110512',
-  phoneHref: 'tel:+919822110512',
+  phone: '+91 7498589003',
+  phoneHref: 'tel:+917498589003',
 
   /** E.164 without the leading '+', as required by wa.me links. */
-  whatsappNumber: '919822110512',
+  whatsappNumber: '917498589003',
 
   email: 'contact@kartzsignage.com',
   emailHref: 'mailto:contact@kartzsignage.com',
